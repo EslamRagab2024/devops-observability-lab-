@@ -1,0 +1,23 @@
+groups:
+  - name: devops_lab_alerts
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{http_status=~"5.."}[1m])) 
+          / 
+          sum(rate(http_requests_total[1m])) > 0.05
+        for: 10s
+        labels:
+          severity: critical
+        annotations:
+          summary: "High HTTP Error Rate detected (SLO Breach)"
+          description: "Error rate is above 5% for the last 10 seconds."
+
+      - alert: InstanceDown
+        expr: up{job="flask-app"} == 0
+        for: 5s
+        labels:
+          severity: page
+        annotations:
+          summary: "Flask App instance is down"
+          description: "The container running the flask app is not responding."

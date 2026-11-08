@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  app:
+    build: ./app
+    container_name: python-flask-app
+    ports:
+      - "5000:5000"
+    networks:
+      - monitoring-net
+    restart: always
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - monitoring-net
+    restart: always
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring-net
+    restart: always
+
+networks:
+  monitoring-net:
+    driver: bridge
