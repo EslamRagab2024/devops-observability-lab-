@@ -1,69 +1,84 @@
-# Production-Ready DevOps Observability Stack
+# 🚀 Production-Grade DevOps Observability Lab
 
-An end-to-end local observability and monitoring solution built with **Python (Flask)**, **Prometheus**, **Grafana**, and **Alertmanager**, containerized using **Docker Compose** on **Red Hat Enterprise Linux 9 (RHEL 9)**.
-
-This project demonstrates core Site Reliability Engineering (SRE) and DevOps principles, including microservice metric instrumentation, custom PromQL SLI/SLO dashboards, automated rule-based alerting, and VM storage management.
+A fully containerized, production-grade observability stack built with **Flask, Prometheus, Grafana, Node Exporter, and Alertmanager**, featuring secure credential management and automated Slack alerting.
 
 ---
 
-## Architecture Overview
-[ Flask Application ] ---> Exposes /metrics ---> [ Prometheus ] ---> Visualizes ---> [ Grafana ]
-|                                              |
-+-- (Triggers Alerts) -------------------------+
-* **Application Layer:** Lightweight Python Flask Web Server instrumented with `prometheus_client`.
-* **Metrics Collector:** Prometheus scraping custom application metrics every 15 seconds.
-* **Visualization Layer:** Grafana provisioning dynamic dashboards for Request Rates (RPS) and Error Percentages.
-* **Alerting Mechanism:** Pre-configured Prometheus alert rules for high error rates and instance unavailability.
+## 🏗️ Architecture & Tech Stack
+
+* **Application:** Flask (Python web application simulating HTTP 500 errors to trigger alerts).
+* **Metrics & Monitoring:** Prometheus (scrapes application and system metrics).
+* **Node Exporter:** Collects system-level hardware and OS metrics.
+* **Visualization:** Grafana (pre-configured dashboards for system health and app metrics).
+* **Alerting & Notification:** Alertmanager (routes firing alerts to Slack securely using Docker Secrets).
+* **Containerization:** Docker & Docker Compose (`monitoring-net` bridge network).
 
 ---
 
-## Tech Stack & Tools
+## 📂 Project Directory Structure
 
-* **OS / Environment:** Red Hat Enterprise Linux 9 (RHEL 9), VMware Workstation
-* **Containerization:** Docker & Docker Compose
-* **Languages & Frameworks:** Python (Flask), PromQL
-* **Monitoring & Observability:** Prometheus v2.51, Grafana v10.4
+```text
+devops-observability-lab/
+├── alertmanager/
+│   └── alertmanager.yml         # Alertmanager routing and Slack receiver config
+├── app/
+│   ├── app.py                   # Flask app with randomized HTTP 500 status codes
+│   ├── Dockerfile
+│   └── requirements.txt
+├── docs/
+│   └── screenshots/             # Dashboard and Slack alert snapshots
+├── grafana/
+│   └── dashboards/              # Grafana dashboard configurations
+├── prometheus/
+│   ├── alert.rules.yml          # Prometheus alerting rules (e.g., HighErrorRate)
+│   └── prometheus.yml           # Prometheus scrape configs
+├── secrets/
+│   └── slack_webhook_url        # Secure Slack Webhook secret (excluded from Git)
+├── .env                         # Local environment variables
+├── .gitignore                   # Excludes sensitive files and credentials
+├── docker-compose.yml           # Orchestration manifest for the entire stack
+└── README.md
 
----
+🔒 Security Best Practice (Secret Management)
+To prevent exposing sensitive credentials (like the Slack Webhook URL) on GitHub, this lab utilizes Docker Secrets mount configuration (api_url_file):
 
-## Features & Implementation Details
+The Slack Webhook URL is stored locally inside secrets/slack_webhook_url.
 
-1. **Custom Application Instrumentation:**
-   * Tracks total HTTP requests broken down by status codes and HTTP methods (`http_requests_total`).
-   * Measures HTTP request latency histograms.
+The secrets/ directory and .env are strictly ignored via .gitignore.
 
-2. **SLI / SLO Dashboards:**
-   * **Throughput (RPS):** `sum(rate(http_requests_total[1m]))`
-   * **Error Rate (%):** `sum(rate(http_requests_total{http_status=~"5.."}[1m])) / sum(rate(http_requests_total[1m])) * 100`
+Alertmanager reads the credential file securely at runtime inside the container without hardcoding it into the configuration files.
 
-3. **Prometheus Alerting Rules:**
-   * `HighErrorRate`: Triggers if the 5xx status code error rate exceeds 5% over a 5-minute window.
-   * `InstanceDown`: Triggers if any target service becomes unreachable (`up == 0`).
+⚙️ Getting Started & Local Deployment
+1. Prerequisites
+Docker & Docker Compose installed on your machine.
 
----
+A Slack Incoming Webhook URL.
 
-## Getting Started
+2. Clone the Repository
+git clone [https://github.com/EslamRagab2024/devops-observability-lab.git](https://github.com/EslamRagab2024/devops-observability-lab.git)
+cd devops-observability-lab
 
-### Prerequisites
+3. Run the Stack
+Start all services in detached mode using Docker Compose:
+docker compose up -d --build
 
-* Docker & Docker Compose installed on RHEL 9 (or Linux host).
-* Git for version control.
+Testing & Verification
+Generate Traffic & Trigger Errors:
+Run the following loop to generate HTTP requests and induce error rates (HTTP 500) to trigger alerts:
+for i in {1..1500}; do curl -s -o /dev/null http://localhost:5000/; sleep 0.1; done
+Verify Prometheus Alerts:
+Open Prometheus in your browser to check the firing alerts:
 
-### Quick Start
+URL: http://localhost:9090/alerts
 
-1. Clone the repository:
-   ```bash
-   git clone [https://github.com/EslamRagab2024/devops-observability-lab.git](https://github.com/EslamRagab2024/devops-observability-lab.git)
-   cd devops-observability-lab
-Launch the full stack:
-docker compose up -d
-Access the endpoints:
+Check Slack Notifications:
+Confirm that [FIRING] and [RESOLVED] notifications are successfully received in your designated Slack channel.
 
+📊 Access Endpoints
 Flask App: http://localhost:5000
 
-App Metrics: http://localhost:5000/metrics
+Prometheus: http://localhost:9090
 
-Prometheus UI: http://localhost:9090
+Grafana: http://localhost:3000 (Default credentials: admin / admin)
 
-Grafana Dashboard: http://localhost:3000 (Default login: admin / admin)
-
+Alertmanager: http://localhost:9093
