@@ -24,6 +24,20 @@ services:
       - monitoring-net
     restart: always
 
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: alertmanager
+    ports:
+      - "9093:9093"
+    volumes: 
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - ./secrets/slack_webhook_url:/etc/alertmanager/slack_webhook_url:ro
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+    networks:
+      - monitoring-net
+    restart: always
+
   grafana:
     image: grafana/grafana:10.4.0
     container_name: grafana
@@ -32,6 +46,20 @@ services:
     networks:
       - monitoring-net
     restart: always
+
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: node-exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    command:
+      - '--path.rootfs=/host'
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - monitoring-net
 
 networks:
   monitoring-net:
